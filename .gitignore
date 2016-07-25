@@ -3,3 +3,4 @@
 # but
 !.gitignore
 !*.ipynb
+!*.py
