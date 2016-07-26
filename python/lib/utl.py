@@ -44,21 +44,18 @@ def get_csv_data_from_url(url):
         zf = zipfile.ZipFile(filepath)
         zf.extractall(path=folderpath)
         zf.close()
-    csvs = [csv for csvs in os.lisdir(folderpath) if csvs.endswith('csv')]
+    csvs = [folderpath + '/' + csv for csv in os.listdir(folderpath) if csv.endswith('csv')]
+    return pandas.concat([read_terrible_csv_file_format(csv) for csv in csvs])
 
 def read_terrible_csv_file_format(csvfile):
     f = open(csvfile,'r')
+    f = open(csvfile,'r')
     # remove garbage
-    f.readline()
-    f.readline()
-    f.readline()
-    f.readline()
-    f.readline()
-    f.readline()
-    f.readline()
-    f.readline()
-    header = f.readline().rstrip('\n').split(',')
-    pandas.concat([pandas.DataFrame([{key:value} for (key,value) in list(zip(header,line.rstrip('\n').split(',')))]) for line in f])
+    [f.readline().split(',') for x in range(8)]
+    header = f.readline().rstrip('\n').lstrip('"').split('","')
+    lines = [x.rstrip('\n').lstrip('"').split('","') for x in f][:-1]
+    return pandas.DataFrame(dict(zip(header,list(zip(*lines)))))
+
 
 
 #https://medium.com/@amirziai/flattening-json-objects-in-python-f5343c794b10#.5ml75lajr

@@ -22,7 +22,7 @@ def get_contexts(api_key):
         print('Error')
         return pandas.read_json(['{}'])
     else:
-        return json_normalize(utl.flatten_json(response['json']['ons']['contextList']['statisticalContext']))
+        return json_normalize(response['json']['ons']['contextList']['statisticalContext'])
 
 ## get the available concepts for a given context
 def get_concepts(context,api_key):
