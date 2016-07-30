@@ -47,15 +47,22 @@ def get_csv_data_from_url(url):
     csvs = [folderpath + '/' + csv for csv in os.listdir(folderpath) if csv.endswith('csv')]
     return pandas.concat([read_terrible_csv_file_format(csv) for csv in csvs])
 
+def uniq(seq):
+    seen = set()
+    seen_add = seen.add
+    return [x for x in seq if not (x in seen or seen_add(x))]
+
+
 def read_terrible_csv_file_format(csvfile):
     f = open(csvfile,'r')
-    f = open(csvfile,'r')
-    # remove garbage
+    #
     [f.readline().split(',') for x in range(8)]
     header = f.readline().rstrip('\n').lstrip('"').split('","')
     lines = [x.rstrip('\n').lstrip('"').split('","') for x in f][:-1]
-    return pandas.DataFrame(dict(zip(header,list(zip(*lines)))))
-
+    split_columns = [uniq(column.split('~')) for column in header]
+    N = max([len(a) for a in split_columns])
+    split_columns = [tuple(a + [''] * (N - len(a))) for a in split_columns]
+    return pandas.DataFrame(dict(zip(split_columns,list(zip(*lines)))))
 
 
 #https://medium.com/@amirziai/flattening-json-objects-in-python-f5343c794b10#.5ml75lajr
