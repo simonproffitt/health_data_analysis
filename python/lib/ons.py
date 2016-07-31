@@ -1,6 +1,4 @@
 #
-
-
 # Librify work Carole did to understand the ONS api
 #
 
@@ -75,7 +73,10 @@ def get_classification_details(context,classification,api_key):
                 codes = [code for code in raw['Structure']['CodeLists']['CodeList']['Code']]
                 temp = {'description':[], 'value':[]}
                 temp['value'] = [code['@value'] for code in codes]
-                temp['description'] = [[desc['$'] for desc in code['Description'] if desc['@xml.lang'] == 'en'][0] for code in codes]
+                try:
+                    temp['description'] =[code['Description']['$']  for code in codes if code['Description']['@xml.lang']=='en']
+                except :
+                    temp['description'] = [[desc['$'] for desc in code['Description'] if desc['@xml.lang'] == 'en'][0] for code in codes]
                 codesdf = pandas.DataFrame(temp)
                 return codesdf.sort_values(['description'])
             except TypeError:
@@ -116,7 +117,27 @@ def get_dataset_details_for_classification_collection(context,classification,col
     details['collection_name'] = collection_name
     return details[['collection_name','geography','file_url']]
 
-def get_dataset_for_classification_collection_geography(context,classification,collection_name,geography,api_key):
-    datasets = get_dataset_details_for_classification_collection(context,classification,collection_name,api_key)
-    datasets = datasets[datasets.geography == 'geography']
-    [get_all_data(a['set_url']) for a in datasets]
+def get_datasets_for_context(context,api_key):
+    url = '{}/datasets.json?apikey={}&context={}'.format(base_url, api_key, context)
+    response = utl.get(url)
+    temp = {'name':[],'url':[],'differentiator':[]}
+    for dataset in response['json']['ons']['datasetList']['contexts']['context']['datasets']['dataset']:
+        if "differentiator" in dataset:
+            temp['differentiator'].append(dataset['differentiator'])
+        else:
+            temp['differentiator'].append('')
+        temp['name'].append([d['$'] for d in dataset['names']['name'] if d['@xml.lang']=='en'][0])
+        temp['url'].append([base_url+'/' + d['href'] for d in dataset['urls']['url'] if d['@representation']=='json'][0])
+    temp = pandas.DataFrame(temp)
+    file_url = []
+    geography = []
+    publication_date = []
+    for idx, tmp in temp.iterrows():
+        details = json_normalize(utl.get(tmp['url'])['json'])
+        publication_date.append(details['ons.datasetDetail.publicationDate'][0])
+        file_url.append([a['href']['$'] for a in details['ons.datasetDetail.documents.document'] for a in a if (a['@type']=='CSV') & (a['href']['@xml.lang']=='en')][0])
+        geography.append([b['$'] for b in details['ons.datasetDetail.geographicalHierarchies.geographicalHierarchy.names.name'] for b in b if b['@xml.lang'] =='en'][0])
+    temp['file_url'] = file_url
+    temp['geography'] = geography
+    temp['publication_date'] = publication_date
+    return temp[['name','geography','differentiator','file_url','publication_date']]
