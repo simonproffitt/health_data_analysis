@@ -57,8 +57,8 @@ def read_terrible_csv_file_format(csvfile):
     f = open(csvfile,'r')
     #
     [f.readline().split(',') for x in range(8)]
-    header = f.readline().rstrip('\n').lstrip('"').split('","')
-    lines = [x.rstrip('\n').lstrip('"').split('","') for x in f][:-1]
+    header = f.readline().rstrip('\n').lstrip('"').rstrip('"').split('","')
+    lines = [x.rstrip('\n').lstrip('"').rstrip('"').split('","') for x in f][:-1]
     split_columns = [uniq(column.split('~')) for column in header]
     N = max([len(a) for a in split_columns])
     split_columns = [tuple(a + [''] * (N - len(a))) for a in split_columns]
